@@ -5,7 +5,8 @@ using StaticArrays
 using Polyhedra
 using .Threads
 
-function launch_perception(; num_agents=50, num_viewable=50, loop=true, loop_radius=50.0, lanes=4, lanewidth=5.0)
+# num agents used to be 50
+function launch_perception(; num_agents=1, num_viewable=50, loop=true, loop_radius=50.0, lanes=4, lanewidth=5.0)
  
     CMD_FLEET = Dict{Int, Channel{VehicleControl}}()
     EMG = Channel{Int}(1)

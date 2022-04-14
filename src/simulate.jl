@@ -94,9 +94,9 @@ function simulate(sim::Simulator, emg, channel;
 
             if display_time > print_increment
                 if disp
-                    print("\e[2K")
-                    print("\e[1G")
-                    @printf("Loop time: %f.", simulated_time / iters)
+                    # print("\e[2K")
+                    # print("\e[1G")
+                    # @printf("Loop time: %f.", simulated_time / iters)
                 end
                 display_time -= print_increment
             end
