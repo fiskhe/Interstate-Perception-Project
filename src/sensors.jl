@@ -183,13 +183,28 @@ end
 
 function get_camera_meas(sensor, gt, ms, road)
     meas = Vector{BBoxMeas}()
+    meas_test = []
     for (id, m) ∈ ms
         pts = get_corners(m)
         transform!(sensor, pts...)
         if infov(pts, sensor)
             bbox = expected_bbox(sensor, pts, gt)
             push!(meas, bbox)
+
+            # println(get_corners(m))
+            # println(pts)
+            state = m.state
+            con = m.control
+            h_state = [state[1], state[2], state[4], m.length, m.width, m.height, state[3], con[2]]
+            m_test = h_Jacobian(h_state, sensor)
+            push!(meas_test, m_test)
         end
+    end
+    if length(meas_test) > 0
+        println("camera array sensor update")
+        println(meas)
+        println(meas_test)
+        println()
     end
     meas
 end
@@ -203,6 +218,7 @@ function update_sensor(sensor::CameraArray, gt, ms, road)
     for (id, camera) ∈ sensor.cameras
         m = get_camera_meas(camera, gt, ms, road)
         meas[id] = m
+        
     end
     meas
 end
