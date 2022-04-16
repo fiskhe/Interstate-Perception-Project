@@ -96,4 +96,37 @@ function h_Jacobian(full_state, camera)
     end
 
     return [left top right bottom] # if just returning h output
+
+    # l_pt = points[left_pt]
+    # # x -> 1/3
+    # n = l_pt[1]
+    # d = l_pt[3]
+    # row = []
+    # push!(row, (d*R[1][1] - n*R[3][1])/d^2) # x
+    # push!(row, (d*R[1][2] - n*R[3][2])/d^2) # y
+    # push!(row, ((d/2)*(
+    # partial_theta = [-sin() -cos()
+    #                  cos()  -sin()]
+    # f = [R[1][1] R[1][2]]*partial_theta*[l,w])
+end
+
+function obj_state_next()
+    # x_k_forecast + kalman_gain * (cam_meas - h(x_k_forecast))
+end
+
+function obj_state_forecast()
+    # dynamics!
+end
+
+function kalman_gain()
+    # p_forecast * J_h(x_k_forecast).T * (J_h(x_k_forecast) * P_f * J_h(x_k_forecast).T + noise_R)^-1
+end
+
+# p is covariance
+function p_k()
+    # (I - kalman_gain*J_h(x_forecast))*p_forecast
+end
+
+function p_forecast()
+    # J_dynamics(prev_state)*p_prev*J_dynamics(prev_state).T + noise_Q
 end
