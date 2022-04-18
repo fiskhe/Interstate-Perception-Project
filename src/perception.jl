@@ -97,25 +97,68 @@ function h_Jacobian(full_state, camera)
 
     return [left top right bottom] # if just returning h output
 
-    # l_pt = points[left_pt]
-    # # x -> 1/3
-    # n = l_pt[1]
-    # d = l_pt[3]
-    # row = []
-    # push!(row, (d*R[1][1] - n*R[3][1])/d^2) # x
-    # push!(row, (d*R[1][2] - n*R[3][2])/d^2) # y
-    # push!(row, ((d/2)*(
-    # partial_theta = [-sin() -cos()
-    #                  cos()  -sin()]
-    # f = [R[1][1] R[1][2]]*partial_theta*[l,w])
+    l_pt = points[left_pt]
+    # x -> 1/3
+    n = l_pt[1]
+    d = l_pt[3]
+    row = []
+    push!(row, ) # x
+    push!(row, ) # y
 end
 
-function obj_state_next()
+function dh_dx(o, u, n, d, R)
+    u = 3
+    (d*R[o][1] - n*R[u][1]) / d^2
+end
+
+function dh_dy(o, u, n, d, R)
+    (d*R[o][2] - n*R[u][2]) / d^2
+end
+
+function dh_dtheta(o, u, n, d, R)
+    #over under numerator denominator R
+
+    M = [-sin() -cos()
+         cos()  -sin()]
+
+    d_high = [R[o][1] R[o][2]] * M * [l,w]
+    d_low = [R[u][1] R[u][2]] * M * [l,w]
+
+    (d/2 * d_high - n/2 * d_low) / d^2
+end
+
+function dh_dl(o, u, n, d, R)
+    d_high = R[o][1]*cos() + R[o][2]sin()
+    d_low = R[u][1]*cos() + R[u][2]*sin()
+    (d/2 * d_high - n/2 * d_low) / d^2
+end
+
+function dh_dw(o, u, n, d, R)
+    d_high = -R[o][1]*sin() + R[o][2]cos()
+    d_low = -R[u][1]*sin() + R[u][2]*cos()
+    (d/2 * d_high - n/2 * d_low) / d^2
+end
+
+function dh_dh(o, u, n, d, R)
+    R[o][3] / d
+end
+
+function obj_state_next(obj_state, cam_meas)
     # x_k_forecast + kalman_gain * (cam_meas - h(x_k_forecast))
+    x_f = obj_state_forecast(obj_state, 0.1)
 end
 
-function obj_state_forecast()
+function obj_state_forecast(obj_state, Δ)
     # dynamics!
+    θ = obj_state[3]
+    v = obj_state[7]
+    ω = obj_state[8]
+    obj_state[1:3] +=  [Δ * cos(θ) * v, Δ * cos(θ) * v, Δ * ω]
+    return obj_state
+end
+
+function J_dynamics_forecast(obj_state, Δ)
+    # jacobian of above.. should be 8x8 (dimensions of object state)
 end
 
 function kalman_gain()
@@ -127,6 +170,6 @@ function p_k()
     # (I - kalman_gain*J_h(x_forecast))*p_forecast
 end
 
-function p_forecast()
+function p_forecast(prev_state)
     # J_dynamics(prev_state)*p_prev*J_dynamics(prev_state).T + noise_Q
 end
