@@ -31,7 +31,7 @@ function object_tracker(SENSE::Channel, TRACKS::Channel, EMG::Channel, camera_ar
     end
 end
 
-function h_Jacobian(full_state, camera)
+function h_state_to_bbox(full_state, camera)
     # full_state = [x y theta l w h v \omega]
     # in sensors.jl:
     # get_camera_meas -> expected_bbox
@@ -96,30 +96,62 @@ function h_Jacobian(full_state, camera)
     end
 
     return [left top right bottom] # if just returning h output
-
-    l_pt = points[left_pt]
-    # x -> 1/3
-    n = l_pt[1]
-    d = l_pt[3]
-    row = []
-    push!(row, ) # x
-    push!(row, ) # y
 end
 
-function dh_dx(o, u, n, d, R)
+function h_jacobian(bbox, points, f, camera)
+    # j = zeros(4,8)
+    j = []
+    # everything * f/camera.sx or sy
+    for i in [left, right]
+        pt = points[i]
+        # x -> 1/3
+        n = pt[1]
+        d = pt[3]
+        row = zeros(8)
+        row[1] = dh_dx(1, n, d, R) # x
+        row[2] = dh_dy(1, n, d, R) # y
+        row[3] = dh_dθ(1, n, d, R)
+        row[4] = dh_dl(1, n, d, R)
+        row[5] = dh_dw(1, n, d, R)
+        row[6] = dh_dh(1, n, d, R)
+        row * f/camera.sx
+        push!(j, row)
+    end
+    for i in [top, bottom]
+        pt = points[i]
+        # x -> 1/3
+        n = pt[2]
+        d = pt[3]
+        row = zeros(8)
+        row[1] = dh_dx(2, n, d, R) # x
+        row[2] = dh_dy(2, n, d, R) # y
+        row[3] = dh_dθ(2, n, d, R)
+        row[4] = dh_dl(2, n, d, R)
+        row[5] = dh_dw(2, n, d, R)
+        row[6] = dh_dh(2, n, d, R)
+        row * f/camera.sy
+        push!(j, row)
+    end
+
+    swaprow!(j,2,3) # so that it is left top right bottom instead of left right top bottom
+    return j
+end
+
+function dh_dx(o, n, d, R)
     u = 3
     (d*R[o][1] - n*R[u][1]) / d^2
 end
 
-function dh_dy(o, u, n, d, R)
+function dh_dy(o, n, d, R)
+    u = 3
     (d*R[o][2] - n*R[u][2]) / d^2
 end
 
-function dh_dtheta(o, u, n, d, R)
+function dh_dθ(o, n, d, R)
     #over under numerator denominator R
-
-    M = [-sin() -cos()
-         cos()  -sin()]
+    u = 3
+    M = [-sin(θ) -cos(θ)
+         cos(θ)  -sin(θ)]
 
     d_high = [R[o][1] R[o][2]] * M * [l,w]
     d_low = [R[u][1] R[u][2]] * M * [l,w]
@@ -127,25 +159,28 @@ function dh_dtheta(o, u, n, d, R)
     (d/2 * d_high - n/2 * d_low) / d^2
 end
 
-function dh_dl(o, u, n, d, R)
-    d_high = R[o][1]*cos() + R[o][2]sin()
-    d_low = R[u][1]*cos() + R[u][2]*sin()
+function dh_dl(o, n, d, R)
+    u = 3
+    d_high = R[o][1]*cos(θ) + R[o][2]sin(θ)
+    d_low = R[u][1]*cos(θ) + R[u][2]*sin(θ)
     (d/2 * d_high - n/2 * d_low) / d^2
 end
 
-function dh_dw(o, u, n, d, R)
-    d_high = -R[o][1]*sin() + R[o][2]cos()
-    d_low = -R[u][1]*sin() + R[u][2]*cos()
+function dh_dw(o, n, d, R)
+    u = 3
+    d_high = -R[o][1]*sin(θ) + R[o][2]cos(θ)
+    d_low = -R[u][1]*sin(θ) + R[u][2]*cos(θ)
     (d/2 * d_high - n/2 * d_low) / d^2
 end
 
-function dh_dh(o, u, n, d, R)
+function dh_dh(o, n, d, R)
+    u = 3
     R[o][3] / d
 end
 
 function obj_state_next(obj_state, cam_meas)
     # x_k_forecast + kalman_gain * (cam_meas - h(x_k_forecast))
-    x_f = obj_state_forecast(obj_state, 0.1)
+    x_f = obj_state_forecast(obj_state, 0.1) # what is time step
 end
 
 function obj_state_forecast(obj_state, Δ)

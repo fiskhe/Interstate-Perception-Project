@@ -191,21 +191,24 @@ function get_camera_meas(sensor, gt, ms, road)
             bbox = expected_bbox(sensor, pts, gt)
             push!(meas, bbox)
 
-            # println(get_corners(m))
-            # println(pts)
+            # my additions start
             state = m.state
             con = m.control
             h_state = [state[1], state[2], state[4], m.length, m.width, m.height, state[3], con[2]]
-            m_test = h_Jacobian(h_state, sensor)
+            m_test = h_state_to_bbox(h_state, sensor)
             push!(meas_test, m_test)
+            # my additions end
         end
     end
+
+    # my additions start
     if length(meas_test) > 0
         println("camera array sensor update")
         println(meas)
         println(meas_test)
         println()
     end
+    # my additions end
     meas
 end
 
