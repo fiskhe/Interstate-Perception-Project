@@ -195,8 +195,9 @@ function get_camera_meas(sensor, gt, ms, road)
             state = m.state
             con = m.control
             h_state = [state[1], state[2], state[4], m.length, m.width, m.height, state[3], con[2]]
-            m_test = h_state_to_bbox(h_state, sensor)
-            push!(meas_test, m_test)
+            # (m_test, points) = h_state_to_bbox(h_state, sensor)
+            # push!(meas_test, m_test)
+            test_J(h_state, sensor)
             # my additions end
         end
     end
